@@ -3,8 +3,8 @@ import sys
 import os
 
 def main():
-    group = os.getenv("GROUP", "431")
-    sid = os.getenv("STUDENT_ID", "s01")
+    group = os.getenv("GROUP", "433")
+    sid = os.getenv("STUDENT_ID", "s14")
     
     print(f"Checking tests for {group}/{sid}...")
     
@@ -22,7 +22,7 @@ def main():
                 print("FAIL (Assertions failed, OK)")
             else:
                 print(f"CRASH (code {result.returncode})")
-                # print(result.stderr.decode()) # Uncomment for debug
+                print(result.stderr.decode()) # Uncomment for debug
         except Exception as e:
             print(f"ERROR: {e}")
 
