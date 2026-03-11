@@ -1,1 +1,14 @@
-# В этом месте вам необходимо: опишите GraphQL схему
+type Ticket {
+  id: Int!
+  name: String!
+  status: String!
+}
+
+type Query {
+  tickets: [Ticket!]!
+  ticket(id: Int!): Ticket
+}
+
+type Mutation {
+  createTicket(name: String!, status: String!): Ticket!
+}
