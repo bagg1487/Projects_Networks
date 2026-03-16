@@ -24,4 +24,6 @@
 ```bash
 make test WEEK=06
 ```
+![alt text](image.png)
+
 Тест проверит, правильно ли ваша функция `build_payload` формирует структуру запроса.
