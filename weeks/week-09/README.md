@@ -25,6 +25,7 @@
 2. HTML/JS файл клиента.
 3. Ответы на вопросы.
 
+![alt text](image.png)
 ## Как проверить
 ```bash
 make test WEEK=09

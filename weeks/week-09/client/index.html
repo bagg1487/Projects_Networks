@@ -1,2 +1,109 @@
-<!doctype html>
-<!-- В этом месте вам необходимо: реализуйте WebRTC клиент -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>sessions-s14 - WebRTC Chat</title>
+    <style>
+        body { font-family: Arial; max-width: 600px; margin: 20px auto; }
+        .messages { height: 300px; border: 1px solid #ccc; overflow-y: auto; padding: 10px; margin: 10px 0; }
+        .message { margin: 5px 0; padding: 5px; }
+        .sent { background: #007bff; color: white; text-align: right; }
+        .received { background: #e9ecef; text-align: left; }
+        input, button { padding: 8px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>WebRTC Chat - sessions-s14</h1>
+    
+    <div>
+        <input type="text" id="myId" placeholder="Ваш ID" value="user1">
+        <button onclick="register()">Register</button>
+    </div>
+    
+    <div id="status">Disconnected</div>
+    
+    <div>
+        <input type="text" id="peerId" placeholder="ID собеседника">
+        <button onclick="startCall()">Connect</button>
+    </div>
+    
+    <div class="messages" id="messages"></div>
+    
+    <div>
+        <input type="text" id="msgInput" placeholder="Сообщение" disabled>
+        <button onclick="sendMsg()" id="sendBtn" disabled>Send</button>
+    </div>
+    
+    <script>
+        let ws, pc, dc, myId, peerId;
+        
+        const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+        
+        function register() {
+            myId = document.getElementById('myId').value;
+            ws = new WebSocket('ws://localhost:8765');
+            ws.onopen = () => ws.send(JSON.stringify({ type: 'register', id: myId }));
+            ws.onmessage = async (e) => {
+                const data = JSON.parse(e.data);
+                if (data.type === 'offer') await onOffer(data);
+                if (data.type === 'answer') await onAnswer(data);
+                if (data.type === 'ice') pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                if (data.type === 'message') addMsg(data.text, 'received', data.from);
+            };
+        }
+        
+        async function startCall() {
+            peerId = document.getElementById('peerId').value;
+            pc = new RTCPeerConnection(config);
+            pc.onicecandidate = (e) => e.candidate && ws.send(JSON.stringify({ type: 'ice', target: peerId, candidate: e.candidate }));
+            dc = pc.createDataChannel('chat');
+            dc.onopen = () => { document.getElementById('status').innerText = 'Connected P2P'; enableChat(true); };
+            dc.onmessage = (e) => { const d = JSON.parse(e.data); addMsg(d.text, 'received', d.from); };
+            
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            ws.send(JSON.stringify({ type: 'offer', target: peerId, sdp: pc.localDescription }));
+        }
+        
+        async function onOffer(data) {
+            peerId = data.from;
+            pc = new RTCPeerConnection(config);
+            pc.onicecandidate = (e) => e.candidate && ws.send(JSON.stringify({ type: 'ice', target: peerId, candidate: e.candidate }));
+            pc.ondatachannel = (e) => { dc = e.channel; setupDC(); };
+            await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            ws.send(JSON.stringify({ type: 'answer', target: peerId, sdp: pc.localDescription }));
+        }
+        
+        function setupDC() {
+            dc.onopen = () => { document.getElementById('status').innerText = 'Connected P2P'; enableChat(true); };
+            dc.onmessage = (e) => { const d = JSON.parse(e.data); addMsg(d.text, 'received', d.from); };
+        }
+        
+        async function onAnswer(data) {
+            await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        }
+        
+        function sendMsg() {
+            const input = document.getElementById('msgInput');
+            if (!input.value) return;
+            dc.send(JSON.stringify({ from: myId, text: input.value }));
+            addMsg(input.value, 'sent');
+            input.value = '';
+        }
+        
+        function addMsg(text, type, from = '') {
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.innerHTML = `<strong>${from || (type === 'sent' ? 'Me' : from)}</strong>: ${text}`;
+            document.getElementById('messages').appendChild(div);
+        }
+        
+        function enableChat(enabled) {
+            document.getElementById('msgInput').disabled = !enabled;
+            document.getElementById('sendBtn').disabled = !enabled;
+        }
+    </script>
+</body>
+</html>
