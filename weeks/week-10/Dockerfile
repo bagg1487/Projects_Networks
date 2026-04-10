@@ -1,13 +1,26 @@
-# В этом файле вам необходимо использовать multi-stage и заменить порт и путь к приложению по своему варианту
+
 FROM python:3.11-slim AS builder
+
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --prefix=/install -r requirements.txt
+
+
+COPY ../../requirements.txt .
+
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 FROM python:3.11-slim
+
 WORKDIR /app
+
 COPY --from=builder /install /usr/local
+
 COPY . .
-# В этом месте вам необходимо заменить на порт из вашего варианта
-EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+RUN addgroup --system appgroup && \
+    adduser --system --no-create-home --ingroup appgroup appuser
+
+USER appuser
+
+EXPOSE 8105
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8105"]
