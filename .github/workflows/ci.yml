@@ -1,42 +1,50 @@
-name: ci
+name: CI/CD Pipeline
 
 on:
   push:
+    branches: [ "main" ]
   pull_request:
+    branches: [ "main" ]
+
+env:
+  PROJECT_CODE: comments-s14
 
 jobs:
-  tests:
+  ci:
     runs-on: ubuntu-latest
-    env:
-      WEEK: "01"
-      GROUP: "431"
-      STUDENT_ID: "s01"
-      IMAGE_NAME: "В этом месте вам необходимо"
+    
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-      - name: Установка зависимостей
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Линтер (необязательно)
-        run: |
-          echo "В этом месте вам необходимо: добавить шаг линтера (ruff/flake8)"
-      - name: Запуск тестов
-        run: make test WEEK=${{ env.WEEK }}
-      - name: Сборка Docker-образа
-        run: |
-          docker build -t $IMAGE_NAME -f weeks/week-10/Dockerfile weeks/week-10
-      - name: Подготовка артефактов
-        run: |
-          mkdir -p artifacts
-          cp weeks/week-10/report.md artifacts/ || true
-          cp weeks/week-14/README.md artifacts/ || true
-      - name: Публикация артефактов
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: artifacts
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest pytest-cov
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    
+    - name: Lint with flake8
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    
+    - name: Test with pytest
+      run: |
+        pytest --cov=. --cov-report=xml --cov-report=html
+    
+    - name: Upload test coverage artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-reports
+        path: |
+          coverage.xml
+          htmlcov/
+        retention-days: 7
+    
+    - name: Build Docker image
+      run: |
+        docker build . --file Dockerfile --tag ${{ env.PROJECT_CODE }}:$(date +%s)
