@@ -1,24 +1,37 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{ .Values.k8s.app }}-deployment
   labels:
-    app: {{ .Chart.Name }}
+    app: {{ .Values.k8s.app }}
+    {{- include "orders-app.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ .Chart.Name }}
+      app: {{ .Values.k8s.app }}
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}
+        app: {{ .Values.k8s.app }}
+        {{- include "orders-app.labels" . | nindent 8 }}
     spec:
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ .Values.k8s.container }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.service.port }}
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
           env:
             - name: APP_PORT
-              value: "{{ .Values.service.port }}"
+              value: {{ .Values.service.port | quote }}
+            - name: PRIORITY
+              value: {{ .Values.extra_field.priority | quote }}
+            - name: PROJECT_CODE
+              value: {{ .Values.project_code | quote }}
+          {{- if .Values.resources }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- end }}

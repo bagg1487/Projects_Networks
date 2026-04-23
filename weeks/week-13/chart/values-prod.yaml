@@ -1,6 +1,17 @@
 replicaCount: 3
+
 image:
-  repository: primer/obraz
-  tag: "prod"
-service:
-  port: 8000
+  repository: orders-app
+  tag: prod
+  pullPolicy: IfNotPresent
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+extra_field:
+  priority: 5
