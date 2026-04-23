@@ -1,1 +1,18 @@
-# В этом месте вам необходимо: Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: users-svc-s14
+  labels:
+    app: users-app
+    group: "433"
+    student: s14
+    service: users
+spec:
+  selector:
+    app: users-app
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8200
+      targetPort: 8200
+  type: ClusterIP
