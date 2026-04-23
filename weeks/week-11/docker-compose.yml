@@ -1,8 +1,9 @@
 version: '3.9'
+
 services:
-  app:
-    # Замените на имя образа
-    image: primer/obraz
+  devices-svc-s14:
+    image: devices-s14:latest
+    container_name: devices-app-s14
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
@@ -10,13 +11,21 @@ services:
       retries: 3
     networks:
       - app-net
+    ports:
+      - "8146:8000"  
+
   gateway:
-    # Замените на имя образа
-    image: primer/obraz
+    image: nginx:alpine 
+    container_name: devices-gateway-s14
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - app
     networks:
       - app-net
+
 networks:
   app-net:
     driver: bridge

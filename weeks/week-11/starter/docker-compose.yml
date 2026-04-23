@@ -1,28 +1,32 @@
 version: '3.8'
 
 services:
-  # Ваш основной сервис
   app:
     build: .
-    # ports:
-    #   - "8000:8000"
-    # environment:
-    #   - DB_HOST=db
-    # depends_on:
-    #   db:
-    #     condition: service_healthy
+    ports:
+      - "8146:8000"  
+    environment:
+      - DB_HOST=db
+      - SERVICE_NAME=devices-svc-s14
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
 
-  # База данных (пример)
-  # db:
-  #   image: postgres:15
-  #   environment:
-  #     POSTGRES_PASSWORD: secret
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U postgres"]
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 5
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: devices
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
 
 networks:
-  # app-network:
-  #   driver: bridge
+  app-network:
+    driver: bridge
